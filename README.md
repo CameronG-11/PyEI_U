@@ -2,22 +2,22 @@
 An updated version of PyEI, a Python library for ecological inference.
 
 Credit for the original version of PyEI:
-
 Knudson et al., (2021). PyEI: A Python package for ecological inference. Journal of Open Source Software, 6(64), 3397, https://doi.org/10.21105/joss.03397
-
 
 Original GitHub: https://github.com/mggg/ecological-inference
 
 ## Installation
 
 
-Using PyEI requires
+Using PyEI requires the following:
+```
 pyei 1.0.1
 jax 0.4.14
 jaxlib 0.4.14
 pymc 4.0.0b5
 pandas 1.5.3
 numpy 1.23.5
+```
 
 
 **PyEI will not function properly unless these specific package versions are installed**
@@ -46,13 +46,12 @@ A brief summary of the functionalities PyEI_U has added to PyEI. See the in code
 
 ```
 
-**r_by_c.py**
+r_by_c.py :
 
     precinct_level_plot() : 
         --has the 'max_precincts' argument added. 
          
-
-    precinct_level_estimates
+    precinct_level_estimates() :
         --automatically calls calculate_turnout_adjusted_summary if not called prior when non_candidate_names is not None
 
 ```

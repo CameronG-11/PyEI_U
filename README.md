@@ -2,11 +2,11 @@
 An updated version of PyEI, a Python library for ecological inference.
 
 Credit for the original version of PyEI:
+
 Knudson et al., (2021). PyEI: A Python package for ecological inference. Journal of Open Source Software, 6(64), 3397, https://doi.org/10.21105/joss.03397
 
-# Original GitHub
 
-https://github.com/mggg/ecological-inference
+Original GitHub: https://github.com/mggg/ecological-inference
 
 ## Installation
 

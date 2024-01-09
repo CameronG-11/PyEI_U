@@ -8,7 +8,6 @@ TODO: Greiner-Quinn Model
 TODO: Refactor to integrate with two_by_two
 """
 
-
 import warnings
 from pymc import sampling_jax
 import numpy as np
@@ -72,18 +71,22 @@ class RowByColumnEI:  # pylint: disable=too-many-instance-attributes
         self.turnout_adjusted_credible_interval_95_mean_voting_prefs = None
         self.turnout_samples = None
 
+        # New, avoids having to remake PLE every time
+        self.PLE = None
+        self.non_candidate_names = None
+
     def fit(  # pylint: disable=too-many-branches
-        self,
-        group_fractions,
-        votes_fractions,
-        precinct_pops,
-        demographic_group_names=None,
-        candidate_names=None,
-        target_accept=0.99,
-        tune=1500,
-        draw_samples=True,
-        precinct_names=None,
-        **other_sampling_args,
+            self,
+            group_fractions,
+            votes_fractions,
+            precinct_pops,
+            demographic_group_names=None,
+            candidate_names=None,
+            target_accept=0.99,
+            tune=1500,
+            draw_samples=True,
+            precinct_names=None,
+            **other_sampling_args,
     ):
         """Fit the specified model using MCMC sampling
         Required arguments:
@@ -249,8 +252,8 @@ class RowByColumnEI:  # pylint: disable=too-many-instance-attributes
         )  # total fraction in all vote columnn num_samples x num_precincts x r
 
         self.turnout_samples = (
-            1 - total_abstentions  # fraction that aren't in the no-vote column(s)
-        ) * np.swapaxes(self.demographic_group_fractions * self.precinct_pops, 0, 1)
+                                       1 - total_abstentions  # fraction that aren't in the no-vote column(s)
+                               ) * np.swapaxes(self.demographic_group_fractions * self.precinct_pops, 0, 1)
 
         turnout_adjusted_samples = np.delete(
             non_adjusted_samples, abstain_column_indices, axis=3
@@ -278,7 +281,7 @@ class RowByColumnEI:  # pylint: disable=too-many-instance-attributes
         self._calculate_turnout_adjusted_samples(non_candidate_names)
 
         samples_converted_to_pops = (
-            np.transpose(self.turnout_adjusted_samples, axes=(3, 0, 1, 2)) * self.turnout_samples
+                np.transpose(self.turnout_adjusted_samples, axes=(3, 0, 1, 2)) * self.turnout_samples
         )
         # (c-1) x num_samples x num_precincts x r x
         samples_of_votes_summed_across_district = samples_converted_to_pops.sum(
@@ -304,7 +307,7 @@ class RowByColumnEI:  # pylint: disable=too-many-instance-attributes
         for row in range(self.num_groups_and_num_candidates[0]):
             for col in range(self.num_groups_and_num_candidates[1] - 1):
                 self.turnout_adjusted_credible_interval_95_mean_voting_prefs[row][col][
-                    :
+                :
                 ] = np.percentile(
                     self.turnout_adjusted_sampled_voting_prefs[:, row, col], percentiles
                 )
@@ -331,7 +334,7 @@ class RowByColumnEI:  # pylint: disable=too-many-instance-attributes
             self.demographic_group_fractions * self.precinct_pops
         )  # num_precincts x r
         samples_converted_to_pops = (
-            np.transpose(b_values, axes=(3, 0, 1, 2)) * demographic_group_counts
+                np.transpose(b_values, axes=(3, 0, 1, 2)) * demographic_group_counts
         )
         # c x num_samples x num_precincts x r
 
@@ -392,8 +395,8 @@ class RowByColumnEI:  # pylint: disable=too-many-instance-attributes
         group_index = self.demographic_group_names.index(group)
 
         samples = (
-            self.sampled_voting_prefs[:, group_index, candidate_index_0]
-            - self.sampled_voting_prefs[:, group_index, candidate_index_1]
+                self.sampled_voting_prefs[:, group_index, candidate_index_0]
+                - self.sampled_voting_prefs[:, group_index, candidate_index_1]
         )
 
         if percentile is None and threshold is not None:
@@ -504,8 +507,8 @@ class RowByColumnEI:  # pylint: disable=too-many-instance-attributes
         group_index_1 = self.demographic_group_names.index(groups[1])
 
         samples = (
-            self.sampled_voting_prefs[:, group_index_0, candidate_index]
-            - self.sampled_voting_prefs[:, group_index_1, candidate_index]
+                self.sampled_voting_prefs[:, group_index_0, candidate_index]
+                - self.sampled_voting_prefs[:, group_index_1, candidate_index]
         )
 
         if percentile is None and threshold is not None:
@@ -645,11 +648,12 @@ class RowByColumnEI:  # pylint: disable=too-many-instance-attributes
             precinct_credible_intervals: num_precincts x r x c x 2
         """
         if non_candidate_names is not None:
-            if self.turnout_adjusted_samples is not None :
+            if self.turnout_adjusted_samples is not None and non_candidate_names == self.non_candidate_names:
                 precinct_level_samples = self.turnout_adjusted_samples
             else:
                 self.calculate_turnout_adjusted_summary(non_candidate_names)
                 precinct_level_samples = self.turnout_adjusted_samples
+            self.non_candidate_names = non_candidate_names
         else:
             precinct_level_samples = np.transpose(
                 self.sim_trace["posterior"]["b"].stack(all_draws=["chain", "draw"]).values,
@@ -672,6 +676,7 @@ class RowByColumnEI:  # pylint: disable=too-many-instance-attributes
                 precinct_credible_intervals[:, row, col, :] = np.percentile(
                     precinct_level_samples[:, :, row, col], percentiles, axis=0
                 ).T
+        self.PLE = (precinct_posterior_means, precinct_credible_intervals)
 
         return (precinct_posterior_means, precinct_credible_intervals)
 
@@ -710,11 +715,11 @@ class RowByColumnEI:  # pylint: disable=too-many-instance-attributes
                 print(self.demographic_group_names[row])
             for candidate_idx, name in enumerate(cand_names):
                 frac = (
-                    np.argmax(sampled_voting_prefs[:, row, :], axis=1) == candidate_idx
-                ).sum() / sampled_voting_prefs.shape[0]
+                               np.argmax(sampled_voting_prefs[:, row, :], axis=1) == candidate_idx
+                       ).sum() / sampled_voting_prefs.shape[0]
                 if verbose:
                     print(
-                        f"     - In {round(frac*100,3)} percent of samples, the district-level "
+                        f"     - In {round(frac * 100, 3)} percent of samples, the district-level "
                         f"vote preference of \n"
                         f"       {self.demographic_group_names[row]} for "
                         f"{name} "
@@ -763,12 +768,12 @@ class RowByColumnEI:  # pylint: disable=too-many-instance-attributes
         for dem1 in range(self.num_groups_and_num_candidates[0]):
             for dem2 in range(dem1):
                 differ_frac = (
-                    np.argmax(sampled_voting_prefs[:, dem1, :], axis=1)
-                    != np.argmax(sampled_voting_prefs[:, dem2, :], axis=1)
-                ).sum() / sampled_voting_prefs.shape[0]
+                                      np.argmax(sampled_voting_prefs[:, dem1, :], axis=1)
+                                      != np.argmax(sampled_voting_prefs[:, dem2, :], axis=1)
+                              ).sum() / sampled_voting_prefs.shape[0]
                 if verbose:
                     print(
-                        f"In {round(differ_frac*100,3)} percent of samples, the district-level "
+                        f"In {round(differ_frac * 100, 3)} percent of samples, the district-level "
                         f"candidates of choice for {self.demographic_group_names[dem1]} and "
                         f"{self.demographic_group_names[dem2]} voters differ."
                     )
@@ -849,7 +854,7 @@ class RowByColumnEI:  # pylint: disable=too-many-instance-attributes
         )
 
     def plot_margin_kde(
-        self, group, candidates, threshold=None, percentile=None, show_threshold=False, ax=None
+            self, group, candidates, threshold=None, percentile=None, show_threshold=False, ax=None
     ):
         """
         Plot kde of the margin between two candidates among the given demographic group.
@@ -891,7 +896,7 @@ class RowByColumnEI:  # pylint: disable=too-many-instance-attributes
         )
 
     def plot_polarization_kde(
-        self, groups, candidate, threshold=None, percentile=None, show_threshold=False, ax=None
+            self, groups, candidate, threshold=None, percentile=None, show_threshold=False, ax=None
     ):
         """Plot kde of differences between voting preferences
 
@@ -979,15 +984,15 @@ class RowByColumnEI:  # pylint: disable=too-many-instance-attributes
         )
 
     def precinct_level_plot(
-        self,
-        candidate,
-        groups=None,
-        alpha=.8,
-        ax=None,
-        show_all_precincts=False,
-        precinct_names=None,
-        plot_as_histograms=False,
-        max_precincts=10,
+            self,
+            candidate,
+            groups=None,
+            alpha=.8,
+            ax=None,
+            show_all_precincts=False,
+            precinct_names=None,
+            plot_as_histograms=False,
+            max_precincts=10,
     ):
         """
         Optional arguments:
@@ -1029,3 +1034,146 @@ class RowByColumnEI:  # pylint: disable=too-many-instance-attributes
             ax=ax,
             max_precincts=max_precincts,
         )
+
+    def print_PLE_by_precinct_name(self, precinct_names, print_only=None, groups=None,
+                                   candidates=None, non_candidate_names=None):
+        """
+               Parameters:
+                precinct_names                  : list of str
+                                        all the precincts which will be printed
+
+                Optional arguments: (if None, all will be included)
+
+                non_candidate_names  : list of str
+                                        each a name of the column/ voting outcome that corresponds to not voting,
+                                            if applicable. Each string in the list must be in candidate_names
+
+                print_only                : str
+                                        Should be either "PPM" or "PCI",
+                                            Restricts the printout to either PPM or PCI respectively
+
+                groups               : list of str
+                                        The groups whose support we're examining
+                candidate            : str
+                                        The candidate whose support we're examining
+        """
+        if self.PLE is None or self.non_candidate_names != non_candidate_names:
+            self.precinct_level_estimates(non_candidate_names)
+
+        # PPM = precinct_posterior_mean, PCI = precinct_credible_interval PLE = precinct_level_estimates
+        PPM, PCI = self.PLE
+
+        PPM_only = False
+        PCI_only = False
+
+        if print_only == "PPM":
+            PPM_only = True
+        elif print_only == "PCI":
+            PCI_only = True
+        elif print_only is not None:
+            print("Error, print_only must be equal to either \"PPM\" or \"PCI\", "
+                  "as in Post Posterior Mean only or Precinct Credible Interval only")
+            print("Terminating printing early due to said error")
+            return "failure"
+
+        if groups is None:
+            groups = self.demographic_group_names
+        if candidates is None:
+            candidates = self.candidate_names
+            if non_candidate_names is not None:
+                for name in non_candidate_names:
+                    candidates.remove(name)
+
+        # ADD ERROR CHECKS
+        try:
+            for name in precinct_names:
+                for group in groups:
+                    for candidate in candidates:
+                        x = self.precinct_names.index(name)
+                        y = self.demographic_group_names.index(group)
+                        z = self.candidate_names.index(candidate)
+                        if not PCI_only:
+                            print("Precinct", self.precinct_names[x], "PPM for candidate",
+                                  self.candidate_names[z], "by", self.demographic_group_names[y], "group:",
+                                  PPM[x][y][z])
+                        if not PPM_only:
+                            print("Precinct", self.precinct_names[x], "PCI for candidate",
+                                  self.candidate_names[z], "by", self.demographic_group_names[y], "group:",
+                                  PCI[x][y][z])
+        except ValueError as v:
+            print("Error, an improper precinct, group, or candidate name has been entered:", v)
+            print("Terminating printing early due to said error")
+
+        return "success"
+
+    def get_PLE_by_precinct_name(self, precinct_names, get_only=None, groups=None,
+                                 candidates=None, non_candidate_names=None):
+        """
+               Parameters:
+                precinct_names                  : list of str
+                                        all the precincts which will be returned
+
+                Optional arguments: (if None, all will be included)
+
+                non_candidate_names  : list of str
+                                        each a name of the column/ voting outcome that corresponds to not voting,
+                                            if applicable. Each string in the list must be in candidate_names
+
+                get_only                : str
+                                        Should be either "PPM" or "PCI",
+                                            Restricts the return to either PPM or PCI respectively
+
+                groups               : list of str
+                                        The groups whose support we're examining
+                candidate            : str
+                                        The candidate whose support we're examining
+        """
+        if self.PLE is None or self.non_candidate_names != non_candidate_names:
+            self.precinct_level_estimates(non_candidate_names)
+
+        # PPM = precinct_posterior_mean, PCI = precinct_credible_interval PLE = precinct_level_estimates
+        PPM, PCI = self.PLE
+        product = []
+
+        PPM_only = False
+        PCI_only = False
+
+        # ADD ERROR CHECKS
+        if get_only == "PPM":
+            PPM_only = True
+        elif get_only == "PCI":
+            PCI_only = True
+        elif get_only is not None:
+            print("Error, get_only must be equal to either \"PPM\" or \"PCI\", "
+                  "as in Post Posterior Mean only or Precinct Credible Interval only")
+            print("Returning a blank product due to said error")
+            return []
+
+        if groups is None:
+            groups = self.demographic_group_names
+        if candidates is None:
+            candidates = self.candidate_names
+            if non_candidate_names is not None:
+                for name in non_candidate_names:
+                    candidates.remove(name)
+
+        # ADD ERROR CHECKS
+        try:
+            for name in precinct_names:
+                for group in groups:
+                    for candidate in candidates:
+                        x = self.precinct_names.index(name)
+                        y = self.demographic_group_names.index(group)
+                        z = self.candidate_names.index(candidate)
+
+                        if PPM_only:
+                            product.append(PPM[x][y][z])
+                        elif PCI_only:
+                            product.append(PCI[x][y][z])
+                        else:
+                            product.append([PPM[x][y][z], PCI[x][y][z]])
+        except ValueError as v:
+            print("Error, an improper precinct, group, or candidate name has been entered:", v)
+            print("Returning a blank product due to said error")
+
+        return product

@@ -4,8 +4,8 @@ Utility functions for saving and loading ei objects to and from disk
 
 import xarray as xr
 import arviz as az
-from pyei.two_by_two import TwoByTwoEI, TwoByTwoEIBaseBayes
-from pyei.r_by_c import RowByColumnEI
+from two_by_two import TwoByTwoEI, TwoByTwoEIBaseBayes
+from r_by_c import RowByColumnEI
 
 
 def to_netcdf(ei_object, filepath):
@@ -25,7 +25,6 @@ def to_netcdf(ei_object, filepath):
     # Add properties as attrs to sim_trace
     # if not (isinstance(ei_object, TwoByTwoEIBaseBayes) or isinstance(ei_object, RowByColumnEI)):
     #     raise ValueError("ei_object must be of class TwoByTwoEIBaseBayes or RowByColumnEI")
-
     is_two_by_two = isinstance(ei_object, TwoByTwoEIBaseBayes)  # bool
 
     if is_two_by_two:

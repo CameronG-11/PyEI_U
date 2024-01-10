@@ -9,7 +9,7 @@ from pymc import sampling_jax
 import numpy as np
 import aesara.tensor as at
 import aesara
-from .plot_utils import (
+from plot_utils import (
     plot_conf_or_credible_interval,
     plot_boxplots,
     plot_kdes,
@@ -964,6 +964,8 @@ class TwoByTwoEI(TwoByTwoEIBaseBayes):
         show_all_precincts=False,
         precinct_names=None,
         plot_as_histograms=False,
+        max_precincts=3,
+        custom_start_index=0
     ):
         """Ridgeplots for precincts
         Optional arguments:
@@ -999,4 +1001,6 @@ class TwoByTwoEI(TwoByTwoEIBaseBayes):
             show_all_precincts=show_all_precincts,
             plot_as_histograms=plot_as_histograms,
             ax=ax,
+            max_precincts=max_precincts,
+            custom_start_index=custom_start_index,
         )

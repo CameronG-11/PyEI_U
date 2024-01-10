@@ -11,7 +11,7 @@ TODO: Refactor to integrate with two_by_two
 import warnings
 from pymc import sampling_jax
 import numpy as np
-from .plot_utils import (
+from plot_utils import (
     plot_boxplots,
     plot_kdes,
     plot_intervals_all_precincts,
@@ -19,9 +19,9 @@ from .plot_utils import (
     plot_margin_kde,
     plot_precincts,
 )
-from .r_by_c_models import ei_multinom_dirichlet, ei_multinom_dirichlet_modified
-from .r_by_c_utils import check_dimensions_of_input
-from .greiner_quinn_gibbs_sampling import pyei_greiner_quinn_sample
+from r_by_c_models import ei_multinom_dirichlet, ei_multinom_dirichlet_modified
+from r_by_c_utils import check_dimensions_of_input
+from greiner_quinn_gibbs_sampling import pyei_greiner_quinn_sample
 
 __all__ = ["RowByColumnEI"]
 

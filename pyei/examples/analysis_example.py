@@ -1,6 +1,6 @@
 from io_utils import from_netcdf
 
-ei = from_netcdf('WarnockLeoffler_2021.netcdf')
+ei = from_netcdf('../netcdfs/WarnockLeoffler_2021.netcdf')
 
 print(ei.summary())
 # print(ei.candidate_of_choice_report())
@@ -31,7 +31,6 @@ print("\nGetting example 1")
 getting_example1 = ei.get_PLE_by_precinct_name(precinct_names=["0011B"], non_candidate_names=["Abstain"],
                                     candidates=["Kelly Loeffler (R)"], groups=["White", "Black"])
 print(getting_example1)
-
 
 print("\nGetting example 2")
 getting_example2 = ei.get_PLE_by_precinct_name(precinct_names=["0011B"], non_candidate_names=["Abstain"],

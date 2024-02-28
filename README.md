@@ -8,7 +8,7 @@ Original GitHub: https://github.com/mggg/ecological-inference
 
 ## Installation
 
-### This part was before a PyEI update which supposedly fixed issues regarding specific package versions. Try downloading PyEI normaly and then try these specific package versions if the default versions do not work.
+### This part was written before a PyEI update was released which supposedly fixed the issues caused by specific package versions. Try downloading PyEI normaly and then try these specific package versions if the default versions do not work.
 
 Using PyEI requires the following:
 ```

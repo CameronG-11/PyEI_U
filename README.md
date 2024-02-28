@@ -8,12 +8,14 @@ Original GitHub: https://github.com/mggg/ecological-inference
 
 ## Installation
 
+### This part was before a PyEI update which supposedly fixed issues regarding specific package versions. Try downloading PyEI normaly and then try these specific package versions if the default versions do not work.
+
 Using PyEI requires the following:
 ```
 jax 0.4.14
 jaxlib 0.4.14
 numba 56.4
-numpy 1.23.5
+numpy 1.23.5from libpysal.examples import explain
 pandas 1.5.3
 pymc 4.0.0b5
 ```
@@ -57,7 +59,7 @@ r_by_c.py:
 
     New:
 
-    get_PLE_by_precinct_name(precinct_names ...):
+    print_PLE_by_precinct_name(precinct_names ...):
         --prints the formatted PLE data for the given array of precinct ids.
         Takes optional arguments for restricting the candidates, groups, and type of PLE data(PPM or PCI only)
 
